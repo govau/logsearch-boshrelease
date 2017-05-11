@@ -1,5 +1,13 @@
 global
-    log <%= p('haproxy.syslog_server') %> syslog <%= p('haproxy.log_level') %>
+    <%
+      syslog_server = nil
+      respond_to?(:if_link) && if_link("syslog_forwarder") do |syslog_forwarder|
+        syslog_server = link('syslog_forwarder').instances.first.address
+      end.else do
+        syslog_server = p("haproxy.syslog_server")
+      end
+    %>
+    log <%= syslog_server %> syslog <%= p('haproxy.log_level') %>
     log-tag ls-router
     daemon
     user vcap
@@ -35,7 +43,15 @@ frontend syslog-in
 backend ingestors-syslog
     mode tcp
     balance roundrobin
-    <% p("haproxy.ingestor.backend_servers").each_with_index do |ip, index| %>
+    <%
+      ingestor_nodes = nil
+      respond_to?(:if_link) && if_link("ingestor") do |ingestor|
+        ingestor_nodes = link('ingestor').instances.map { |instance| instance.address }
+      end.else do
+        ingestor_nodes = p("haproxy.ingestor.backend_servers")
+      end
+    %>
+    <% ingestor_nodes.each_with_index do |ip, index| %>
     server ingestor<%= index %> <%= ip %>:<%= p("haproxy.ingestor.syslog.backend_port") %> check inter 1000
     <% end %>
 
@@ -51,7 +67,15 @@ frontend syslog-tls-in
 backend ingestors-syslog-tls
     mode tcp
     balance roundrobin
-    <% p("haproxy.ingestor.backend_servers").each_with_index do |ip, index| %>
+    <%
+      ingestor_nodes = nil
+      respond_to?(:if_link) && if_link("ingestor") do |ingestor|
+        ingestor_nodes = link('ingestor').instances.map { |instance| instance.address }
+      end.else do
+        ingestor_nodes = p("haproxy.ingestor.backend_servers")
+      end
+    %>
+    <% ingestor_nodes.each_with_index do |ip, index| %>
     server ingestor<%= index %> <%= ip %>:<%= p("haproxy.ingestor.tls.backend_port") %> check inter 1000
     <% end %>
 
@@ -69,7 +93,15 @@ frontend relp-in
 backend ingestors-relp
     mode tcp
     balance roundrobin
-    <% p("haproxy.ingestor.backend_servers").each_with_index do |ip, index| %>
+    <%
+      ingestor_nodes = nil
+      respond_to?(:if_link) && if_link("ingestor") do |ingestor|
+        ingestor_nodes = link('ingestor').instances.map { |instance| instance.address }
+      end.else do
+        ingestor_nodes = p("haproxy.ingestor.backend_servers")
+      end
+    %>
+    <% ingestor_nodes.each_with_index do |ip, index| %>
     server ingestor<%= index %> <%= ip %>:<%= p("haproxy.ingestor.relp.backend_port") %> check inter 1000
     <% end %>
 
@@ -91,7 +123,15 @@ frontend kibana-in
 backend kibana
     mode http
     balance roundrobin
-    <% p("haproxy.kibana.backend_servers").each_with_index do |ip, index| %>
+    <%
+      kibana_nodes = nil
+      respond_to?(:if_link) && if_link("kibana") do |kibana|
+        kibana_nodes = link('kibana').instances.map { |instance| instance.address }
+      end.else do
+        kibana_nodes = p("haproxy.kibana.backend_servers")
+      end
+    %>
+    <% kibana_nodes.each_with_index do |ip, index| %>
     server kibana<%= index %> <%= ip %>:<%= p("haproxy.kibana.backend_port") %> check inter 1000
     <% end %>
 
@@ -114,8 +154,16 @@ frontend cluster_monitor-in
 backend cluster_monitor
     mode http
     balance roundrobin
-    <% p("haproxy.cluster_monitor.backend_servers").each_with_index do |ip, index| %>
-    server kibana<%= index %> <%= ip %>:<%= p("haproxy.cluster_monitor.backend_port") %> check inter 1000
+    <%
+      cluster_monitor_nodes = nil
+      respond_to?(:if_link) && if_link("syslog_forwarder") do |syslog_forwarder|
+        cluster_monitor_nodes = link('syslog_forwarder').instances.map { |instance| instance.address }
+      end.else do
+        cluster_monitor_nodes = p("haproxy.cluster_monitor.backend_servers")
+      end
+    %>
+    <% cluster_monitor_nodes.each_with_index do |ip, index| %>
+    server cluster_monitor<%= index %> <%= ip %>:<%= p("haproxy.cluster_monitor.backend_port") %> check inter 1000
     <% end %>
 
 <% if p("haproxy.elastic.inbound_port", nil) %>
@@ -139,7 +187,15 @@ frontend elastic-in
 backend elastic
     mode http
     balance roundrobin
-    <% p("haproxy.elastic.backend_servers").each_with_index do |ip, index| %>
+    <%
+      elasticsearch_nodes = nil
+      respond_to?(:if_link) && if_link("elasticsearch") do |elasticsearch|
+        elasticsearch_nodes = link('elasticsearch').instances.map { |instance| instance.address }
+      end.else do
+        elasticsearch_nodes = p("haproxy.elastic.backend_servers")
+      end
+    %>
+    <% elasticsearch_nodes.each_with_index do |ip, index| %>
     server elastic<%= index %> <%= ip %>:9000 check inter 1000
     <% end %>
 

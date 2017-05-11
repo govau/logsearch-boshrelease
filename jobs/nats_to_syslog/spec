@@ -7,6 +7,11 @@ templates:
 packages:
 - nats_to_syslog
 
+consumes:
+- name: ls-router
+  type: ls-router
+  optional: true
+
 properties:
   nats_to_syslog.nats.user:
     description: "Username for server authentication."
@@ -30,4 +35,4 @@ properties:
     description: "The host of the syslog endpoint"
   nats_to_syslog.syslog.port:
     description: "The port of the syslog endpoint"
-
+    default: 5514

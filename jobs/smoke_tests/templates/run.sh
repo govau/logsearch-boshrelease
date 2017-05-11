@@ -1,7 +1,22 @@
 #!/bin/bash
 
-MASTER_URL="http://<%= p('smoke_tests.elasticsearch_master.host')%>:<%= p('smoke_tests.elasticsearch_master.port')%>"
-INGESTOR_HOST="<%= p('smoke_tests.syslog_ingestor.host')%>"
+<%
+  elasticsearch_addrs = nil
+  respond_to?(:if_link) && if_link("elasticsearch") do |elasticsearch|
+    elasticsearch_addrs = link('elasticsearch').instances.first.address
+  end.else do
+    elasticsearch_addrs = p("smoke_tests.elasticsearch_master.host")
+  end
+  syslog_ingestor = nil
+  respond_to?(:if_link) && if_link("ls-router") do |syslog_ingestor|
+    syslog_ingestor = link('ls-router').instances.first.address
+  end.else do
+    syslog_ingestor = p("smoke_tests.syslog_ingestor.host")
+  end
+%>
+
+MASTER_URL="http://<%= elasticsearch_addrs %>:<%= p('smoke_tests.elasticsearch_master.port')%>"
+INGESTOR_HOST="<%= syslog_ingestor %>"
 INGESTOR_PORT="<%= p('smoke_tests.syslog_ingestor.port')%>"
 
 SMOKE_ID=$(LC_ALL=C; cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)

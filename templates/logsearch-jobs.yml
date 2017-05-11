@@ -9,9 +9,9 @@ jobs:
 - name: elasticsearch_master
   instances: 1
   templates:
-  - {name: elasticsearch, release: logsearch}
+  - {name: elasticsearch, release: logsearch, consumes: {elasticsearch: nil} }
   - {name: cerebro, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil} }
   resource_pool: elasticsearch_master
   persistent_disk_pool: elasticsearch_master
   networks:
@@ -33,13 +33,13 @@ jobs:
   instances: 1
   templates:
   - { release: logsearch, name: queue }
-  - { release: logsearch, name: parser }
-  - { release: logsearch, name: ingestor_syslog }
-  - { release: logsearch, name: elasticsearch }
-  - { release: logsearch, name: elasticsearch_config }
-  - { release: logsearch, name: curator }
-  - { release: logsearch, name: kibana }
-  - { release: logsearch, name: nats_to_syslog }
+  - { release: logsearch, name: parser, consumes: {queue: nil} }
+  - { release: logsearch, name: ingestor_syslog, consumes: {queue: nil} }
+  - { release: logsearch, name: elasticsearch, consumes: {elasticsearch: nil} }
+  - { release: logsearch, name: elasticsearch_config, consumes: {elasticsearch: nil} }
+  - { release: logsearch, name: curator, consumes: {elasticsearch: nil} }
+  - { release: logsearch, name: kibana, consumes: {queue: nil, elasticsearch: nil} }
+  - { release: logsearch, name: nats_to_syslog, consumes: {ls-router: nil} }
   resource_pool: cluster_monitor
   networks:
   - name: default
@@ -82,7 +82,7 @@ jobs:
       filters:
       - monitor: /var/vcap/packages/logsearch-config/logstash-filters-monitor.conf
     nats_to_syslog:
-      debug: true      
+      debug: true
     logstash_ingestor:
       syslog:
         port: 514
@@ -91,7 +91,7 @@ jobs:
   instances: 1
   templates:
   - {name: queue, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: queue
   persistent_disk_pool: queue
   networks:
@@ -105,9 +105,9 @@ jobs:
 - name: maintenance
   instances: 1
   templates:
-  - {name: elasticsearch_config, release: logsearch}
-  - {name: curator, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: elasticsearch_config, release: logsearch, consumes: {elasticsearch: nil}}
+  - {name: curator, release: logsearch, consumes: {elasticsearch: nil}}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: maintenance
   networks:
   - name: default
@@ -126,8 +126,8 @@ jobs:
 - name: elasticsearch_data
   instances: 2
   templates:
-  - {name: elasticsearch, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: elasticsearch, release: logsearch, consumes: {elasticsearch: nil}}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: elasticsearch_data
   persistent_disk_pool: elasticsearch_data
   networks:
@@ -148,8 +148,8 @@ jobs:
 - name: kibana
   instances: 1
   templates:
-  - {name: kibana, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: kibana, release: logsearch, consumes: {elasticsearch: nil, queue: nil}}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: kibana
   networks:
   - name: default
@@ -163,8 +163,8 @@ jobs:
 - name: ingestor
   instances: 1
   templates:
-  - {name: ingestor_syslog, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: ingestor_syslog, release: logsearch, consumes: {queue: nil}}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: ingestor
   networks:
   - name: default
@@ -182,9 +182,9 @@ jobs:
 - name: ingestor-bosh-nats
   instances: 0
   templates:
-  - { name: ingestor_syslog, release: logsearch }
-  - { name: nats_to_syslog, release: logsearch }
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: ingestor_syslog, release: logsearch, consumes: {queue: nil}}
+  - {name: nats_to_syslog, release: logsearch, consumes: {ls-router: nil}}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: ingestor
   networks:
   - name: default
@@ -201,9 +201,9 @@ jobs:
 - name: parser
   instances: 2
   templates:
-  - {name: parser, release: logsearch}
-  - {name: elasticsearch, release: logsearch}
-  - {name: syslog_forwarder, release: logsearch}
+  - {name: parser, release: logsearch, consumes: {queue: nil}}
+  - {name: elasticsearch, release: logsearch, consumes: {elasticsearch: nil}}
+  - {name: syslog_forwarder, release: logsearch, consumes: {ingestor: nil}}
   resource_pool: parser
   networks:
   - name: default
@@ -225,7 +225,7 @@ jobs:
 - name: ls-router
   instances: 1
   templates:
-  - { name: haproxy, release: logsearch }
+    - { name: haproxy, release: logsearch, consumes: {ingestor: nil, kibana: nil, syslog_forwarder: nil} }
   resource_pool: haproxy
   networks:
   - name: default
@@ -245,7 +245,7 @@ jobs:
   instances: 1
   lifecycle: errand
   templates:
-  - {name: enable_shard_allocation, release: logsearch}
+  - {name: enable_shard_allocation, release: logsearch, consumes: {elasticsearch: nil}}
   resource_pool: errand
   networks:
   - name: default
@@ -259,7 +259,7 @@ jobs:
   resource_pool: errand
   release: logsearch
   templates:
-  - {name: smoke-tests, release: logsearch}
+    - {name: smoke-tests, release: logsearch, consumes: {elasticsearch: nil, ls-router: nil}}
   networks:
   - name: default
   lifecycle: errand

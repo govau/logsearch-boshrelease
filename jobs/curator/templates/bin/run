@@ -2,7 +2,16 @@
 
 set -e
 
-ELASTICSEARCH_HOST=<%= p('curator.elasticsearch.host') %>
+<%
+  elasticsearch_addrs = nil
+  respond_to?(:if_link) && if_link("elasticsearch") do |elasticsearch|
+    elasticsearch_addrs = link('elasticsearch').instances[0].address
+  end.else do
+    elasticsearch_addrs = p("curator.elasticsearch.host")
+  end
+%>
+
+ELASTICSEARCH_HOST=<%= elasticsearch_addrs %>
 ELASTICSEARCH_PORT=<%= p('curator.elasticsearch.port') %>
 
 export LC_ALL=en_US.UTF-8

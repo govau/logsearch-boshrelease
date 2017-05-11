@@ -1,9 +1,11 @@
 ---
 name: parser
+
 packages:
 - logstash
 - logsearch-config
 - java8
+
 templates:
   bin/parser_ctl: bin/parser_ctl
   bin/monit_debugger: bin/monit_debugger
@@ -16,6 +18,12 @@ templates:
   config/filters_override.conf.erb: config/filters_override.conf
   config/log4j2.properties.erb: config/log4j2.properties
   logsearch/logs.yml: logsearch/logs.yml
+
+consumes:
+- name: queue
+  type: queue
+  optional: true
+
 properties:
   logstash.metadata_level:
     description: "Whether to include additional metadata throughout the event lifecycle. NONE = disabled, DEBUG = fully enabled"

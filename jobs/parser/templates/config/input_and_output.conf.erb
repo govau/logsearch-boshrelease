@@ -1,11 +1,20 @@
 input {
 
+<%
+  queue_addrs = nil
+  respond_to?(:if_link) && if_link("queue") do |queue|
+    queue_addrs = link('queue').instances.first.address
+  end.else do
+    queue_addrs = p("redis.host")
+  end
+%>
+
 <% p('logstash_parser.inputs').each do | input | %>
     <%= input['plugin'] %> {
       <% if 'redis' == input['plugin'] %>
         <%
           options = {
-            "host" => p('redis.host'),
+            "host" => queue_addrs,
             "port" => p('redis.port'),
             "type" => "redis-input",
             "data_type" => "list",

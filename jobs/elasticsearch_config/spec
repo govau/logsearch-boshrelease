@@ -12,6 +12,11 @@ templates:
   index-templates/index-settings.json.erb:  index-templates/index-settings.json
   index-templates/index-mappings.json.erb:  index-templates/index-mappings.json
 
+consumes:
+- name: elasticsearch
+  type: elasticsearch
+  optional: true
+
 properties:
   elasticsearch_config.elasticsearch.host:
     description: "The elasticsearch master node hostname"

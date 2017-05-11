@@ -23,7 +23,14 @@ def put_to_es(url_stem_base, es_config, request_params = {})
       url_stem << "?#{params}"
     end
 
-    ret << "URL=http://#{p('elasticsearch_config.elasticsearch.host')}:#{p('elasticsearch_config.elasticsearch.port')}/#{url_stem}"
+    elasticsearch_addrs = nil
+    respond_to?(:if_link) && if_link("elasticsearch") do |elasticsearch|
+      elasticsearch_addrs = link('elasticsearch').instances.first.address
+    end.else do
+      elasticsearch_addrs = p("elasticsearch_config.elasticsearch.host")
+    end
+
+    ret << "URL=http://#{elasticsearch_addrs}:#{p('elasticsearch_config.elasticsearch.port')}/#{url_stem}"
     if nil == content
      ret << 'curl -X DELETE "${URL}"'
     else
@@ -62,8 +69,15 @@ end
 #
 # wait for elasticsearch availability
 #
-
-until curl -f 'http://<%= p("elasticsearch_config.elasticsearch.host") %>:<%= p("elasticsearch_config.elasticsearch.port") %>/_cluster/health?wait_for_status=yellow&timeout=10m'; do :; done
+<%
+  elasticsearch_addrs = nil
+  respond_to?(:if_link) && if_link("elasticsearch") do |elasticsearch|
+    elasticsearch_addrs = link('elasticsearch').instances.first.address
+  end.else do
+    elasticsearch_addrs = p("elasticsearch_config.elasticsearch.host")
+  end
+%>
+until curl -f 'http://<%= elasticsearch_addrs %>:<%= p("elasticsearch_config.elasticsearch.port") %>/_cluster/health?wait_for_status=yellow&timeout=10m'; do :; done
 
 #
 # templates

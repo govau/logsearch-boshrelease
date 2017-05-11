@@ -7,6 +7,11 @@ templates:
 
 packages: []
 
+consumes:
+- name: ingestor
+  type: ingestor
+  optional: true
+
 properties:
   syslog_forwarder.config:
     description: |

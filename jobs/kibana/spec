@@ -1,7 +1,9 @@
 ---
 name: "kibana"
+
 packages:
   - "kibana"
+
 templates:
   bin/kibana_ctl: "bin/kibana_ctl"
   config/kibana.conf.erb: "config/kibana.conf"
@@ -9,6 +11,19 @@ templates:
   data/properties.sh.erb: "data/properties.sh"
   helpers/ctl_setup.sh: "helpers/ctl_setup.sh"
   helpers/ctl_utils.sh: "helpers/ctl_utils.sh"
+
+provides:
+- name: kibana
+  type: kibana
+
+consumes:
+- name: elasticsearch
+  type: elasticsearch
+  optional: true
+- name: queue
+  type: queue
+  optional: true
+
 properties:
   kibana.elasticsearch.host:
     description: "IP address of elasticsearch master to send elasticsearch requests to"
@@ -52,3 +67,5 @@ properties:
   kibana.wait_for_templates:
     description: "A list of index templates that need to be present in ElasticSearch before the process starts"
     default: []
+  redis.host:
+    description: Redis host of queue

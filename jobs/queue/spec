@@ -1,7 +1,9 @@
 ---
 name: queue
+
 packages:
 - redis
+
 templates:
   bin/redis_ctl: bin/redis_ctl
   bin/monit_debugger: bin/monit_debugger
@@ -10,6 +12,14 @@ templates:
   helpers/ctl_utils.sh: helpers/ctl_utils.sh
   config/redis.conf.erb: config/redis.conf
   logsearch/metric-collector/redis/collector: logsearch/metric-collector/redis/collector
+
+provides:
+- name: queue
+  type: queue
+  properties:
+  - redis.port
+  - redis.key
+
 properties:
   redis.port:
     description: Redis port of queue

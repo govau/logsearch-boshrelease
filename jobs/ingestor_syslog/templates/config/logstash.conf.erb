@@ -1,4 +1,12 @@
 input {
+  <%
+    queue_addrs = nil
+    respond_to?(:if_link) && if_link("queue") do |queue|
+      queue_addrs = link('queue').instances.first.address
+    end.else do
+      queue_addrs = p("redis.host")
+    end
+  %>
   <% if p("logstash_ingestor.syslog.port") %>
   tcp {
     add_field => [ "type", "syslog" ]
@@ -79,7 +87,7 @@ output {
         <%
           if 'redis' == output['plugin']
             options = {
-              "host" => p('redis.host'),
+              "host" => queue_addrs,
               "port" => p('redis.port'),
               "data_type" => "list",
               "key" => p('redis.key'),
@@ -104,7 +112,7 @@ output {
 
   <% if p('archiver.enabled') %>
     redis {
-      host => "<%= p("redis.host") %>"
+      host => "<%= queue_addrs %>"
       port => "<%= p("redis.port") %>"
       data_type => "list"
       key => "<%= p("redis.key") %>_archiver"
