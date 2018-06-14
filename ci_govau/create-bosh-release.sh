@@ -3,7 +3,7 @@
 set -e
 set -x
 
-VERSION=$(cat version/number)-govau
+VERSION=$(cat version/number)
 RELEASE_ROOT="$PWD/github-release-info"
 RELEASE_NAME=${bosh_release_name}
 
